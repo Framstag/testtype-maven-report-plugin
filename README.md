@@ -39,3 +39,6 @@ Mojo class).
 * Add Unit- and Maven-tests
 * Understand which versions of dependencies for Maven plugin development
   we should use (and not use).
+* Release Process
+  * Get a release working using GitHUb Actions
+  * Publish release to Maven Central
