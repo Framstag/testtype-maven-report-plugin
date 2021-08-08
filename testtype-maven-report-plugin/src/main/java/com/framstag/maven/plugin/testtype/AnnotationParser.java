@@ -22,6 +22,7 @@ import org.apache.maven.plugin.logging.Log;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -47,7 +48,7 @@ public class AnnotationParser {
 
       String packageName = rc.getPackageName();
       String className = rc.getClassName();
-      Clazz clazz = new Clazz(packageName,className);
+      Clazz clazz = new Clazz(packageName, className);
 
       classes.add(clazz);
 
@@ -85,7 +86,7 @@ public class AnnotationParser {
     return classes;
   }
 
-  public List<Clazz> parseFiles(Log log, Path path, List<String> jarDependencies) throws IOException {
+  private List<Clazz> parseFiles(Log log, Path path, List<String> jarDependencies) throws IOException {
     List<Clazz> classes = new LinkedList<>();
 
     CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
@@ -110,14 +111,29 @@ public class AnnotationParser {
         CompilationUnit unit = parseResult.getResult().get();
         unit.getStorage().ifPresent(storage -> log.debug("Parsed unit: " + storage.getPath().toString()));
 
-        classes.addAll(parseUnit(log,parseResult.getResult().get()));
-      }
-      else {
+        classes.addAll(parseUnit(log, parseResult.getResult().get()));
+      } else {
         parseResult.getResult().flatMap(CompilationUnit::getStorage).ifPresent(storage -> log.error("Failed unit: " + storage.getPath().toString()));
 
-        for (Problem problem: parseResult.getProblems()) {
+        for (Problem problem : parseResult.getProblems()) {
           log.error(" * " + problem.getVerboseMessage());
         }
+      }
+    }
+
+    return classes;
+  }
+
+  public List<Clazz> parseDirectories(Log log, List<String> directories, List<String> jarDependencies) {
+    List<Clazz> classes = new LinkedList<>();
+
+    for (String root : directories) {
+      try {
+        log.info("Parsing directory " + root + "...");
+
+        classes.addAll(parseFiles(log, Paths.get(root), jarDependencies));
+      } catch (IllegalStateException | IOException e) {
+        log.warn(e);
       }
     }
 

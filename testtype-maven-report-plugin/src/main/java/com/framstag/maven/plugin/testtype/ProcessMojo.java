@@ -47,17 +47,7 @@ public class ProcessMojo extends AbstractMavenReport {
 
     AnnotationParser parser = new AnnotationParser();
 
-    List<Clazz> allClasses = new LinkedList<>();
-
-    for (String root : project.getTestCompileSourceRoots()) {
-      try {
-        getLog().info("Parsing directory " + root + "...");
-
-        allClasses.addAll(parser.parseFiles(getLog(), Paths.get(root), jarDependencies));
-      } catch (IllegalStateException | IOException e) {
-        getLog().warn(e);
-      }
-    }
+    List<Clazz> allClasses = parser.parseDirectories(getLog(),project.getTestCompileSourceRoots(),jarDependencies);
 
     getLog().debug("Resolving test types...");
 
