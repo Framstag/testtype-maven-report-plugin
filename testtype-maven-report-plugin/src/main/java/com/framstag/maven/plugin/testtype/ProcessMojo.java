@@ -1,5 +1,7 @@
 package com.framstag.maven.plugin.testtype;
 
+import com.framstag.maven.plugin.testtype.reports.TestCountByPackageReport;
+import com.framstag.maven.plugin.testtype.reports.TestCountByTypeReport;
 import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.doxia.sink.Sink;
 
@@ -49,7 +51,7 @@ public class ProcessMojo extends AbstractMavenReport {
 
     for (String root : project.getTestCompileSourceRoots()) {
       try {
-        getLog().debug("Parsing directory " + root + "...");
+        getLog().info("Parsing directory " + root + "...");
 
         allClasses.addAll(parser.parseFiles(getLog(), Paths.get(root), jarDependencies));
       } catch (IllegalStateException | IOException e) {
@@ -59,7 +61,6 @@ public class ProcessMojo extends AbstractMavenReport {
 
     getLog().debug("Resolving test types...");
 
-    List<Test> tests = new LinkedList<>();
     TestTypeResolver resolver = new TestTypeResolver();
 
     // Spring Boot + JUnit 5
@@ -72,22 +73,25 @@ public class ProcessMojo extends AbstractMavenReport {
 
     // JUnit 5
     resolver.addPattern(new ResolverPattern(null, "org.junit.jupiter.api.Test", TestType.JUNIT_5));
+    resolver.addPattern(new ResolverPattern(null, "org.junit.jupiter.params.ParameterizedTest", TestType.JUNIT_5));
+
+    int classes = 0;
+    int methods = 0;
+    List<Test> tests = new LinkedList<>();
 
     for (Clazz clazz : allClasses) {
-      for (Method method : clazz.getMethods()) {
-        Optional<Test> test = resolver.resolve(clazz, method);
+      classes++;
 
-        test.ifPresent(tests::add);
+      for (Method method : clazz.getMethods()) {
+        methods++;
+
+        resolver
+          .resolve(clazz, method)
+          .ifPresent(tests::add);
       }
     }
 
-    Set<String> packages = new HashSet<>();
-
-    for (Test test : tests) {
-      packages.add(test.getPackageName());
-    }
-
-    List<String> packageList = packages.stream().sorted().collect(Collectors.toList());
+    log.info("Parser detected " + classes + " classes with " + methods + " methods, resolved to " + tests.size() + " tests");
 
     log.info("Generating " + getOutputName() + ".html"
       + " for " + project.getName() + " " + project.getVersion());
@@ -119,44 +123,8 @@ public class ProcessMojo extends AbstractMavenReport {
     mainSink.text("Summary");
     mainSink.sectionTitle2_();
 
-    mainSink.table();
-
-    // Header
-
-    mainSink.tableRow();
-    mainSink.tableHeaderCell();
-    mainSink.text("Test Type");
-    mainSink.tableHeaderCell_();
-
-    mainSink.tableHeaderCell();
-    mainSink.text("Count");
-    mainSink.tableHeaderCell_();
-    mainSink.tableRow_();
-
-    // Data
-
-    for (TestType type : TestType.values()) {
-      int count = 0;
-
-      for (Test test : tests) {
-        if (test.getType().equals(type)) {
-          count++;
-        }
-      }
-
-      mainSink.tableRow();
-      mainSink.tableHeaderCell();
-      mainSink.text(type.getLabel());
-      mainSink.tableHeaderCell_();
-
-      mainSink.tableCell();
-      mainSink.text(String.valueOf(count));
-      mainSink.tableCell_();
-
-      mainSink.tableRow_();
-    }
-
-    mainSink.table_();
+    TestCountByTypeReport testCountByTypeReport = new TestCountByTypeReport();
+    testCountByTypeReport.execute(mainSink, tests);
 
     mainSink.section2_();
 
@@ -167,27 +135,12 @@ public class ProcessMojo extends AbstractMavenReport {
     mainSink.text("Package List");
     mainSink.sectionTitle2_();
 
-    mainSink.table();
+    TestCountByPackageReport testCountByPackageReport = new TestCountByPackageReport();
+    testCountByPackageReport.execute(mainSink, tests);
 
-    // Header
-
-    mainSink.tableRow();
-    mainSink.tableHeaderCell();
-    mainSink.text("Package");
-    mainSink.tableHeaderCell_();
-
-    // Data
-
-    for (String p : packageList) {
-      mainSink.tableRow();
-      mainSink.tableHeaderCell();
-      mainSink.text(p);
-      mainSink.tableHeaderCell_();
-      mainSink.tableRow_();
-    }
-
-    mainSink.table_();
     mainSink.section2_();
+
+    List<String> packageList = tests.stream().map(Test::getPackageName).distinct().sorted().collect(Collectors.toList());
 
     // Section per Package
 
@@ -196,7 +149,37 @@ public class ProcessMojo extends AbstractMavenReport {
       mainSink.sectionTitle2();
       mainSink.text(p);
       mainSink.sectionTitle2_();
+
+      List<Test> packageTests = tests.stream().filter( t -> t.getPackageName().equals(p)).collect(Collectors.toList());
+      List<String> packageTestClasses = packageTests.stream().map(Test::getClassName).distinct().sorted().collect(Collectors.toList());
+
+      mainSink.table();
+
+      // Header
+
+      mainSink.tableRow();
+      mainSink.tableHeaderCell();
+      mainSink.text("Test class");
+      mainSink.tableHeaderCell_();
+      mainSink.tableHeaderCell();
+      mainSink.text("Tests");
+      mainSink.tableHeaderCell_();
+      mainSink.tableRow_();
+
+      for (String testClass : packageTestClasses) {
+        mainSink.tableRow();
+        mainSink.tableCell();
+        mainSink.text(testClass);
+        mainSink.tableCell_();
+
+        mainSink.tableCell();
+        mainSink.text(String.valueOf(packageTests.stream().filter(t -> t.getClassName().equals(testClass)).count()));
+        mainSink.tableCell_();
+        mainSink.tableRow_();
+      }
+
       mainSink.section2_();
+      mainSink.table_();
     }
 
     // List of tests
@@ -225,7 +208,6 @@ public class ProcessMojo extends AbstractMavenReport {
 
     for (Test test : tests) {
       mainSink.tableRow();
-
       mainSink.tableCell();
       mainSink.text(test.getFullName());
       mainSink.tableCell_();
@@ -237,7 +219,6 @@ public class ProcessMojo extends AbstractMavenReport {
       mainSink.tableCell();
       mainSink.text(test.getType().getLabel());
       mainSink.tableCell_();
-
       mainSink.tableRow_();
     }
 
