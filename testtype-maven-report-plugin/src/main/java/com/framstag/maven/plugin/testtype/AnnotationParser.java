@@ -20,6 +20,7 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeS
 import com.github.javaparser.utils.SourceRoot;
 import org.apache.maven.plugin.logging.Log;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -130,6 +131,18 @@ public class AnnotationParser {
     for (String root : directories) {
       try {
         log.info("Parsing directory " + root + "...");
+
+        File path= new File(root);
+
+        if (!path.exists()) {
+          log.warn("Skipping path '" + root +"', since it does not exist");
+          continue;
+        }
+
+        if (!path.isDirectory()) {
+          log.warn("Skipping path '" + root +"', since it is not a directory");
+          continue;
+        }
 
         classes.addAll(parseFiles(log, Paths.get(root), jarDependencies));
       } catch (IllegalStateException | IOException e) {
