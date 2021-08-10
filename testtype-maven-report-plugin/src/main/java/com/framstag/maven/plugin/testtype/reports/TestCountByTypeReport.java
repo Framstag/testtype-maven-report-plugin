@@ -8,8 +8,14 @@ import java.util.List;
 
 public class TestCountByTypeReport {
 
-  public void execute(Sink mainSink, List<Test> tests) {
+  public void execute(Sink mainSink, String caption, List<Test> tests) {
     mainSink.table();
+
+    if (caption != null && !caption.isEmpty()) {
+      mainSink.tableCaption();
+      mainSink.text(caption);
+      mainSink.tableCaption_();
+    }
 
     // Header
 

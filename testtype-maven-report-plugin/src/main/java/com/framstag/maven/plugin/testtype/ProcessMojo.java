@@ -114,7 +114,7 @@ public class ProcessMojo extends AbstractMavenReport {
     mainSink.sectionTitle2_();
 
     TestCountByTypeReport testCountByTypeReport = new TestCountByTypeReport();
-    testCountByTypeReport.execute(mainSink, tests);
+    testCountByTypeReport.execute(mainSink, "Test Type count", tests);
 
     mainSink.section2_();
 
@@ -141,7 +141,11 @@ public class ProcessMojo extends AbstractMavenReport {
       mainSink.sectionTitle2_();
 
       List<Test> packageTests = tests.stream().filter( t -> t.getPackageName().equals(p)).collect(Collectors.toList());
+      List<Test> transitivePackageTests = tests.stream().filter( t -> t.getPackageName().startsWith(p + ".") || t.getPackageName().equals(p)).collect(Collectors.toList());
       List<String> packageTestClasses = packageTests.stream().map(Test::getClassName).distinct().sorted().collect(Collectors.toList());
+
+      testCountByTypeReport.execute(mainSink, "Test types count", packageTests);
+      testCountByTypeReport.execute(mainSink, "Transitive test type count", transitivePackageTests);
 
       mainSink.table();
 
