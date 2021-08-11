@@ -40,4 +40,12 @@ public class Test {
   public TestType getType() {
     return type;
   }
+
+  public boolean isInPackage(String packageName) {
+    return this.packageName.equals(packageName);
+  }
+
+  public boolean isInPackageOrSubPackage(String packageName) {
+    return this.packageName.equals(packageName) || this.packageName.startsWith(packageName + ".");
+  }
 }

@@ -12,8 +12,6 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.reporting.AbstractMavenReport;
 import org.apache.maven.reporting.MavenReportException;
 
-import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -130,18 +128,26 @@ public class ProcessMojo extends AbstractMavenReport {
 
     mainSink.section2_();
 
-    List<String> packageList = tests.stream().map(Test::getPackageName).distinct().sorted().collect(Collectors.toList());
+    PackageNameCompleter completer = new PackageNameCompleter();
+
+    List<String> packages = completer.convert(tests
+      .stream()
+      .map(Test::getPackageName)
+      .distinct().collect(Collectors.toList()))
+      .stream()
+      .sorted()
+      .collect(Collectors.toList());
 
     // Section per Package
 
-    for (String p : packageList) {
+    for (String p : packages) {
       mainSink.section2();
       mainSink.sectionTitle2();
       mainSink.text(p);
       mainSink.sectionTitle2_();
 
-      List<Test> packageTests = tests.stream().filter( t -> t.getPackageName().equals(p)).collect(Collectors.toList());
-      List<Test> transitivePackageTests = tests.stream().filter( t -> t.getPackageName().startsWith(p + ".") || t.getPackageName().equals(p)).collect(Collectors.toList());
+      List<Test> packageTests = tests.stream().filter( t -> t.isInPackage(p)).collect(Collectors.toList());
+      List<Test> transitivePackageTests = tests.stream().filter( t -> t.isInPackageOrSubPackage(p)).collect(Collectors.toList());
       List<String> packageTestClasses = packageTests.stream().map(Test::getClassName).distinct().sorted().collect(Collectors.toList());
 
       testCountByTypeReport.execute(mainSink, "Test types count", packageTests);
