@@ -12,7 +12,9 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.reporting.AbstractMavenReport;
 import org.apache.maven.reporting.MavenReportException;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
@@ -128,7 +130,7 @@ public class ProcessMojo extends AbstractMavenReport {
 
     mainSink.section2_();
 
-    PackageNameCompleter completer = new PackageNameCompleter();
+    PackageListCompleter completer = new PackageListCompleter();
 
     List<String> packages = completer.convert(tests
       .stream()
