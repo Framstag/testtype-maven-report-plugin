@@ -40,15 +40,17 @@ public class TestCountByTypeReport {
         }
       }
 
-      mainSink.tableRow();
-      mainSink.tableCell();
-      mainSink.text(type.getLabel());
-      mainSink.tableCell_();
+      if (count > 0) {
+        mainSink.tableRow();
+        mainSink.tableCell();
+        mainSink.text(type.getLabel());
+        mainSink.tableCell_();
 
-      mainSink.tableCell();
-      mainSink.text(String.valueOf(count));
-      mainSink.tableCell_();
-      mainSink.tableRow_();
+        mainSink.tableCell();
+        mainSink.text(String.valueOf(count));
+        mainSink.tableCell_();
+        mainSink.tableRow_();
+      }
     }
 
     mainSink.tableRow();
