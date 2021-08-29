@@ -40,7 +40,9 @@ public class TestCountByPackageReport {
 
       mainSink.tableRow();
       mainSink.tableCell();
+      mainSink.link("#" + p);
       mainSink.text(p);
+      mainSink.link_();
       mainSink.tableCell_();
 
       mainSink.tableCell();

@@ -148,6 +148,9 @@ public class ProcessMojo extends AbstractMavenReport {
       mainSink.text(p);
       mainSink.sectionTitle2_();
 
+      mainSink.anchor(p);
+      mainSink.anchor_();
+
       List<Test> packageTests = tests.stream().filter( t -> t.isInPackage(p)).collect(Collectors.toList());
       List<Test> transitivePackageTests = tests.stream().filter( t -> t.isInPackageOrSubPackage(p)).collect(Collectors.toList());
       List<String> packageTestClasses = packageTests.stream().map(Test::getClassName).distinct().sorted().collect(Collectors.toList());
@@ -180,8 +183,8 @@ public class ProcessMojo extends AbstractMavenReport {
         mainSink.tableRow_();
       }
 
-      mainSink.section2_();
       mainSink.table_();
+      mainSink.section2_();
     }
 
     // List of tests
