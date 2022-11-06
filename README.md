@@ -27,6 +27,16 @@ This is a proof of concept. The report generated is already OK but not
 complete. The code needs some refactoring (move more code out of the
 Mojo class).
 
+## Usage
+
+```xml
+<plugin>
+  <groupId>com.framstag</groupId>
+  <artifactId>testtype-maven-report-plugin</artifactId>
+  <version>1.0-SNAPSHOT</version>
+</plugin>
+```
+
 ## TODOs
 
 * Get clear how to signal combinations of frameworks
